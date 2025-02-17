@@ -1,0 +1,175 @@
+DEBUG = 0
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+import time
+import pandas as pd
+import numpy as np
+
+def download_stats_batting(web_link):
+    # opening the webpage
+    driver = webdriver.Chrome()
+    driver.get(web_link)
+
+    # pressing the stats tab
+    element = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//*[@id="tab-stats"]'))
+    )
+    element.click()
+
+    driver.implicitly_wait(5)
+    # put stats into cleaned numpy array
+    table_body = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//*[@id="tab-content-stats"]/section/div[2]/div/div/div[2]/div[1]/table/tbody'))
+    )
+
+    # finding all stats and team names
+    table_rows = table_body.find_elements(By.TAG_NAME, "td")
+    team_names = table_body.find_elements(By.CLASS_NAME, "w-play-competition-stats__player-name--club")
+    team_names = [name.text for name in team_names]
+ 
+    # turning the uncleaned stats first into text then reshaping them
+    table_rows = np.array([item.text for item in table_rows])
+    table_rows = np.reshape(table_rows, ((len(table_rows)//2),2))
+
+    # seperating the stats for runs and averages
+    runs, average = np.split(table_rows, 2, 1)
+    runs = np.concatenate(runs)
+    average = np.concatenate(average)
+
+    # stacking all stats together to form the data frame
+    final_stats = np.stack((team_names, runs, average), axis = 1)
+    print(final_stats)
+
+    #put data into a dataframe
+    stats_data = pd.DataFrame(final_stats)
+    stats_data.columns = ["Team", "Runs", "Average"]
+    print(stats_data)
+
+    # checking if file save wanted
+    save_wanted = input("would you like to save stats to csv file? ")
+    if "y" in save_wanted.lower():
+        # saving dataframe to excel sheet
+        stats_data.to_csv("Batting by team.xlsx")
+
+    return stats_data
+def stats_analysis_batting(stats_data):
+    # turning all the runs from strings to integers
+    stats_data.Runs = stats_data.Runs.astype(int)
+
+    # summing all the runs by the team
+    total_runs = stats_data.pivot_table(values = 'Runs', index='Team', aggfunc='sum')
+
+    # removing any '-' signalling no batting average
+    data_copy = stats_data.copy()[pd.to_numeric(stats_data['Average'], errors='coerce').notnull()]
+
+    # making all remaining averages into float numbers
+    data_copy['Average'] = data_copy['Average'].astype(float)
+    batting_averages = pd.DataFrame(data_copy.pivot_table(values = 'Average', index = 'Team', aggfunc = 'mean'))
+
+    # sorting all values and printing final stats
+    batting_averages = batting_averages.sort_values("Average")
+    total_runs = total_runs.sort_values("Runs")
+    print(batting_averages)
+    print(total_runs)
+def download_stats_bowling(web_link):
+    driver = webdriver.Chrome()
+    driver.get(web_link)
+
+    element = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//*[@id="tab-stats"]'))
+    )
+    element.click()
+
+    try: 
+        element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="competition-stats-category"]'))
+        )
+        time.sleep(2)
+        element.click()
+        
+    except:
+        print("couldn't find pulldown")
+
+    try:
+        time.sleep(0.5)
+        element = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//*[@id="competition-stats-category-options-list"]/li[2]/button'))
+        )
+        element.click()
+    except:
+        print("couldn't find bowling tab")
+
+    driver.execute_script('window.scrollBy(0, 1000)')
+    # put stats into cleaned numpy array
+    table_body = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//*[@id="tab-content-stats"]/section/div[2]/div/div/div[2]/div[1]/table/tbody'))
+    )
+
+    driver.implicitly_wait(5)
+
+    table_rows = driver.find_elements(By.TAG_NAME, "td")
+    team_names = driver.find_elements(By.CLASS_NAME, "w-play-competition-stats__player-name--club")
+    team_names = [name.text for name in team_names]
+
+    table_rows = np.array([item.text for item in table_rows])
+    table_rows = np.reshape(table_rows, (len(table_rows)//2,2))
+
+    # seperating the stats for runs and averages
+    wickets, average = np.split(table_rows, 2, 1)
+    wickets = np.concatenate(wickets)
+    average = np.concatenate(average)
+
+    # stacking all stats together to form the data frame
+    final_stats = np.stack((team_names, wickets, average), axis = 1)
+    print(final_stats)
+
+    #put data into a dataframe
+    stats_data = pd.DataFrame(final_stats)
+    stats_data.columns = ["Team", "Wickets", "Average"]
+    print(stats_data)
+
+    # checking if file save wanted
+    save_wanted = input("would you like to save stats to csv file? ")
+    if "y" in save_wanted.lower():
+        # saving dataframe to excel sheet
+        stats_data.to_csv("Bowling by team.xlsx")
+
+    return stats_data
+def stats_analysis_bowling(stats_data):
+    stats_data.Wickets = stats_data.Wickets.astype(int)
+
+    total_wickets = stats_data.pivot_table(values = 'Wickets', index='Team', aggfunc='sum')
+
+    data_copy = bowling_data.copy()[pd.to_numeric(bowling_data['Average'], errors='coerce').notnull()]
+    data_copy['Average'] = data_copy['Average'].astype(float)
+    bowling_averages = pd.DataFrame(data_copy.pivot_table(values = 'Average', index = 'Team', aggfunc = 'mean'))
+
+    bowling_averages = bowling_averages.sort_values("Average")
+    total_wickets = total_wickets.sort_values("Wickets")
+    print(bowling_averages)
+    print(total_wickets)
+
+want_stats = "Y"
+while want_stats == "Y":
+    web_link = input("Enter the link for the stats wanted: ")
+    while ("play.cricket" not in web_link) or ("stats" not in web_link):
+        web_link = input("try again: ")
+
+    bat_bowl = input("bat or bowl? ")
+
+    if "o" in bat_bowl.lower():
+        bowling_data = download_stats_bowling(web_link)
+        stats_analysis_bowling(bowling_data)
+
+    else:
+        batting_data = download_stats_batting(web_link)
+        stats_analysis_batting(batting_data)
+
+    while want_stats not in ["Y", "N"]:
+        want_stats = input("Stats? Y/N only: ")
+            
