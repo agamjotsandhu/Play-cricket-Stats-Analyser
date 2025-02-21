@@ -1,11 +1,8 @@
 # Play-cricket-Stats-Analyser
 Cricket Stats Scraper
 
-Overview
-
 This project is a web scraper designed to extract batting and bowling statistics from cricket websites. Using Selenium, the program navigates the site, retrieves data, and organizes it into a structured format for analysis. The statistics are then saved in a CSV file for further use.
 
-Motivation
 I created this tool to automate the process of gathering cricket stats, making it easier to analyze player and team performances without manually copying and pasting data. This script is especially useful for cricket analysts, players, and enthusiasts who want quick insights into batting and bowling performances.
 
 Features
@@ -37,7 +34,4 @@ Potential Improvements
   Enhancing the analysis with more advanced statistics and visualizations.
   Running Selenium in headless mode for improved efficiency.
   Bowling stats have first couple team names wrong (cannot figure out why)
-
-License
-This project is open-source and available under the MIT License.
 
