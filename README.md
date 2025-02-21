@@ -15,7 +15,6 @@ Features
   Performs basic statistical analysis, including total runs, wickets, and averages per team.
 
 Dependencies
-To run this project, you need to install the following Python packages:
   Selenium
   Numpy
   Pandas
